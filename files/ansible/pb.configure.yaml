@@ -1,0 +1,43 @@
+---
+### ---------------------------------------------------------------------------
+### CONFIGURE OUR DEVICE WITH BASIC PARAMETERS
+### ---------------------------------------------------------------------------
+- hosts: all
+  connection: local
+  gather_facts: False
+  become: False
+  roles: 
+    - juniper.junos
+  tasks:
+
+    - name: "### SEND CLI CONFIGURATION COMMANDS TO REMOTE DEVICE ###"
+      juniper_junos_config:
+
+        # declare our connection parameters
+        user: "root"
+        passwd: "juniper123"
+        timeout: 240
+
+        # declare that the config is in 'set' format and
+        #  this configuration should be a `merge` operation
+        #  configuration will rollback after 10 minutess without confirm
+        load: merge
+        format: 'set'
+        confirmed: 10
+
+        # CLI configuration commands to send to the device
+        lines:
+          - 'set system host-name router1'
+          - 'set system domain-name wolfe.com'
+          - 'set interfaces lo0.1 family inet address 192.168.1.1/32'
+          - 'set protocols lldp interface all'
+          - 'set protocols rstp interface all'
+
+      # store the output of our configuration changes to a new object called `result`
+      register: result
+
+    # if there was any output from the change above, then print the result to the screen
+    - name: "### PRINT THE RESULT TO CONSOLE ###"
+      debug:
+        var: result.diff_lines
+      when: result.diff_lines is defined
